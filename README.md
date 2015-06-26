@@ -30,8 +30,8 @@ Substraction - -
 
 
 
-W visible calculation prints the formula multiple times as it is being calculated and changed
+W visible calculation.exe prints the formula multiple times as it is being calculated and changed
 
-WO visible calculation just shows the answer
+WO visible calculation.exe just shows the answer
 
 Digits are supported, use a full stop - .
