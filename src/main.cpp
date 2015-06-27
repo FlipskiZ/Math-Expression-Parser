@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <iomanip>
 #include <math.h>
 #include <cctype>
 #include <stdlib.h>
@@ -13,52 +14,82 @@ string multiplicationParser(string expression);
 string additionParser(string expression);
 string removeDecZeroes(string s);
 
+int digitalPrecision = 6;
+
+string preciseConversion(double x){
+    std::ostringstream ss;
+    ss << fixed << setprecision(digitalPrecision);
+    ss << x;
+    return ss.str();
+}
+
 int layer = 0;
+bool showCalculation = false;
+bool repeat = true;
 
 int main(){
     string expression = "";
-    double answer = 0;
+    string answer = "";
+    string choice = "";
 
-    cout << "Current expression - Procession part - Layers deep (parenthesis)\n";
-    cout << "Please write in a mathematical expression. nth-root format is n%num\n";
-    getline(cin, expression);
+    cout << "Show calculation?\n1. Yes\n2. No\n";
+    getline(cin, choice);
+    showCalculation = (choice == "1");
 
-    cout << "";
-
-    int position = expression.find(' ');
-    while(position > -1){
-        expression.erase(position, 1);
-        position = expression.find(' ');
-    }
-
+    cout << "How precise should the decimals be? (Up to 15)\n";
+    getline(cin, choice);
     try{
-        for(int i = 0; i < expression.length(); i++){
-            if(!isdigit(expression[i]) && expression[i] != '(' && expression[i] != ')' && expression[i] != '^' && expression[i] != '%' && expression[i] != '*' && expression[i] != '/' && expression[i] != '+' && expression[i] != '-' && expression[i] != '.'){
-                throw "Unexpected Symbol";
-            }
-        }
-        answer = stod((masterParser(expression, 0).c_str()));
-    }catch(const char* eS){
-        cerr << "Error: " << eS << endl;
-
-        cout << "\nPress enter to exit\n";
-        string dummy;
-        getline(cin, dummy);
-        return EXIT_FAILURE;
-    }catch(...){
-        cerr << "Unexpected Error, Please confirm that the expression is correct\n";
-
-        cout << "\nPress enter to exit\n";
-        string dummy;
-        getline(cin, dummy);
-        return EXIT_FAILURE;
+    digitalPrecision = stoi(choice);
+    }catch(const std::out_of_range& oor){
+        cout << "Out of range error, defaulting to 6 digits\n";
+        digitalPrecision = 6;
+    }catch(const std::invalid_argument& ia){
+        cout << "Invalid argument error, defaulting to 6 digits\n";
+        digitalPrecision = 6;
     }
 
-    cout << answer << " - " << "Answer" << endl;
+    if(showCalculation)
+        cout << "Current expression - Procession part - Layers deep (parenthesis)\n";
 
-    cout << "\nPress enter to exit\n";
-    string dummy;
-    getline(cin, dummy);
+    while(repeat){
+        cout << "Please write in a mathematical expression. nth-root format is n%num\n";
+        getline(cin, expression);
+
+        int position = expression.find(' ');
+        while(position > -1){
+            expression.erase(position, 1);
+            position = expression.find(' ');
+        }
+
+        try{
+            for(int i = 0; i < expression.length(); i++){
+                if(!isdigit(expression[i]) && expression[i] != '(' && expression[i] != ')' && expression[i] != '^' && expression[i] != '%' && expression[i] != '*' && expression[i] != '/' && expression[i] != '+' && expression[i] != '-' && expression[i] != '.'){
+                    throw "Unexpected Symbol";
+                }
+            }
+            answer = masterParser(expression, 0);
+        }catch(const char* eS){
+            cerr << "Error: " << eS << endl;
+
+            cout << "\nPress enter to exit\n";
+            string dummy;
+            getline(cin, dummy);
+            return EXIT_FAILURE;
+        }catch(...){
+            cerr << "Unexpected Error, Please confirm that the expression is correct\n";
+
+            cout << "\nPress enter to exit\n";
+            string dummy;
+            getline(cin, dummy);
+            return EXIT_FAILURE;
+        }
+
+        cout << answer << " - " << "Answer" << endl;
+
+        cout << "\nDo you want to repeat with the same settings?\n1. Repeat\n2. Quit\n";
+        getline(cin, choice);
+        repeat = (choice == "1");
+    }
     return 0;
 }
 
@@ -67,7 +98,8 @@ string masterParser(string expression, int position){
         for(int i = position; i < expression.length()+1; i++){
             if(expression[i] == '('){
                 layer++;
-                cout << expression << " - " << "Parenthesis" << " - " << layer << endl;
+                if(showCalculation)
+                    cout << expression << " - " << "Parenthesis" << " - " << layer << endl;
                 expression = masterParser(expression, i+1);
                 i = position;
             }else if(expression[i] == ')'){
@@ -116,7 +148,7 @@ string exponentiationParser(string expression){
             }else{
                 b = stod(toNumber.c_str());
                 toNumber = "";
-                expression.replace(start, i-start, to_string((powerTo) ? pow(a, b) : pow(b, (double)1/a)));
+                expression.replace(start, i-start, preciseConversion((powerTo) ? pow(a, b) : pow(b, (double)1/a)));
                 a = 0;
                 b = 0;
                 toNumber = "";
@@ -129,7 +161,8 @@ string exponentiationParser(string expression){
         }
     }
     expression = removeDecZeroes(expression);
-    cout << expression << " - " << "Exponentiation" << " - " << layer << endl;
+    if(showCalculation)
+        cout << expression << " - " << "Exponentiation" << " - " << layer << endl;
     return expression;
 }
 
@@ -169,7 +202,7 @@ string multiplicationParser(string expression){
             }else{
                 b = stod(toNumber.c_str());
                 toNumber = "";
-                expression.replace(start, i-start, to_string((multiplication) ? a*b : a/b));
+                expression.replace(start, i-start, preciseConversion((multiplication) ? a*b : a/b));
                 a = 0;
                 b = 0;
                 toNumber = "";
@@ -182,7 +215,8 @@ string multiplicationParser(string expression){
         }
     }
     expression = removeDecZeroes(expression);
-    cout << expression << " - " << "Multiplication" << " - " << layer << endl;
+    if(showCalculation)
+        cout << expression << " - " << "Multiplication" << " - " << layer << endl;
     return expression;
 }
 
@@ -223,7 +257,7 @@ string additionParser(string expression){
             }else{
                 b = stod(toNumber.c_str());
                 toNumber = "";
-                expression.replace(start, i-start, to_string((addition) ? a+b : a-b));
+                expression.replace(start, i-start, preciseConversion((addition) ? a+b : a-b));
                 a = 0;
                 b = 0;
                 toNumber = "";
@@ -236,7 +270,8 @@ string additionParser(string expression){
         }
     }
     expression = removeDecZeroes(expression);
-    cout << expression << " - " << "Addition" << " - " << layer << endl;
+    if(showCalculation)
+        cout << expression << " - " << "Addition" << " - " << layer << endl;
     return expression;
 }
 
